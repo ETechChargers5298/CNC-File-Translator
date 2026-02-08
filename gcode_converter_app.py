@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 TEAM_BLUE_HEX = "#002060"
 TEAM_GREEN_HEX = "#74B44C"
 SHOPBOT_X_RED = "#FF0000"   # Red for X
-SHOPBOT_Y_GREEN = "#00AA00" # Green for Y (Standard ShopBot color)
+SHOPBOT_Y_GREEN = "#00AA00" # Green for Y
 START_COLOR = "#0000FF"     # Blue for Start
 END_COLOR = "#FFD700"       # Yellow (Gold) for End
 
@@ -25,7 +25,6 @@ def process_gcode(input_content):
         upper = trimmed.upper()
         parts = trimmed.split(',')
         
-        # 1. Intercept PenguinCAM Park Position (X0.5 Y24.0)
         if "Y24.0" in upper or "Y 24.0" in upper:
             output_lines.append(f"' Redirected PenguinCAM Park ({line}) to Home:")
             output_lines.append("J2, 0, 0")
@@ -49,10 +48,7 @@ def process_gcode(input_content):
     return "\n".join(output_lines)
 
 def generate_preview(content):
-    """
-    State-tracking parser with ShopBot-themed axis arrows (X=Red, Y=Green)
-    and Start/End markers (Start=Blue, End=Yellow).
-    """
+    plt.clf() # Clear plot to prevent overlap
     x_coords = []
     y_coords = []
     cur_x, cur_y = 0.0, 0.0
@@ -87,31 +83,25 @@ def generate_preview(content):
     if not x_coords:
         return None
 
-    # Create the Plot
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.plot(x_coords, y_coords, color=TEAM_BLUE_HEX, linewidth=1.2, label="Tool Path", zorder=3)
     
-    # ADD SHOPBOT AXIS ARROWS at Origin
     x_range = max(x_coords) - min(x_coords) if x_coords else 1
     arrow_len = max(x_range * 0.1, 0.5) 
     
-    # X-Axis Arrow (Red)
     ax.annotate('', xy=(arrow_len, 0), xytext=(0, 0),
                 arrowprops=dict(edgecolor=SHOPBOT_X_RED, facecolor=SHOPBOT_X_RED, width=2, headwidth=8))
     ax.text(arrow_len, -arrow_len*0.1, 'X', color=SHOPBOT_X_RED, fontweight='bold', ha='center')
 
-    # Y-Axis Arrow (Green)
     ax.annotate('', xy=(0, arrow_len), xytext=(0, 0),
                 arrowprops=dict(edgecolor=SHOPBOT_Y_GREEN, facecolor=SHOPBOT_Y_GREEN, width=2, headwidth=8))
     ax.text(-arrow_len*0.1, arrow_len, 'Y', color=SHOPBOT_Y_GREEN, fontweight='bold', va='center')
 
-    # --- MODIFIED: Mark Start (Blue) and End (Yellow) ---
     ax.scatter(x_coords[0], y_coords[0], color=START_COLOR, s=60, label="Start Point", zorder=5, edgecolors='black')
     ax.scatter(x_coords[-1], y_coords[-1], color=END_COLOR, s=60, label="End Point (Home)", zorder=6, edgecolors='black')
     
-    # Axis Labels and Formatting
-    ax.set_xlabel("X axis (inches)", color=SHOPBOT_X_RED, fontweight='bold')
-    ax.set_ylabel("Y axis (inches)", color=SHOPBOT_Y_GREEN, fontweight='bold')
+    ax.set_xlabel("X axis", color=SHOPBOT_X_RED, fontweight='bold')
+    ax.set_ylabel("Y axis", color=SHOPBOT_Y_GREEN, fontweight='bold')
     ax.set_aspect('equal', adjustable='datalim')
     ax.set_title("ShopBot Preview", color=TEAM_BLUE_HEX, fontweight='bold')
     ax.grid(True, linestyle=':', alpha=0.5)
@@ -119,15 +109,24 @@ def generate_preview(content):
     
     return fig
 
-# --- App Interface ---
+# --- UPDATED STYLING SECTION ---
 st.markdown(f"""
 <style>
     .st-emotion-cache-2trqyj {{ color: {TEAM_BLUE_HEX}; }}
-    .stButton>button {{
+    
+    /* Targets BOTH standard buttons and download buttons */
+    .stButton>button, .stDownloadButton>button {{
         background-color: {TEAM_GREEN_HEX} !important;
         border-color: {TEAM_GREEN_HEX} !important;
         color: white !important;
     }}
+    
+    /* Change hover behavior to be slightly darker */
+    .stButton>button:hover, .stDownloadButton>button:hover {{
+        background-color: #5e923d !important;
+        border-color: #5e923d !important;
+    }}
+
     .stSuccess {{ background-color: #E8F5E9; color: {TEAM_GREEN_HEX}; }}
 </style>
 """, unsafe_allow_html=True)
@@ -169,3 +168,6 @@ if uploaded_file:
         file_name=output_name,
         mime="text/plain"
     )
+
+    st.subheader("4. Run SBP File from Shopbot Software")
+    st.write("Send the file to the computer directly connected to the ShopBot machine (Slack, Google Drive, etc.)")
