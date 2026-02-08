@@ -74,8 +74,8 @@ with col1:
 with col2:
     st.title("CNC CAM File Translator")
 
-st.markdown("*Utility used to convert .nc files from PenguinCAM to .sbp files to use for ShopBot MAX CNC*")
-st.markdown("See app code at: [https://github.com/ETechChargers5298/CNC-File-Translator](github.com/ETechChargers5298/CNC-File-Translator)")
+st.markdown("Utility used to convert .nc files from PenguinCAM to .sbp files to use for ShopBot MAX CNC")
+st.markdown("*See app code at: [github.com/ETechChargers5298/CNC-File-Translator](https://github.com/ETechChargers5298/CNC-File-Translator)*")
 # --- End of Updated Headings ---
 
 uploaded_file = st.file_uploader("Upload .nc file", type=["nc", "txt"])
@@ -99,5 +99,6 @@ if uploaded_file:
         file_name=output_name,
         mime="text/plain"
     )
+
 
 
