@@ -111,7 +111,7 @@ def generate_preview(content):
     
     return fig
 
-# --- UPDATED STYLING SECTION ---
+# --- App Interface ---
 st.markdown(f"""
 <style>
     .st-emotion-cache-2trqyj {{ color: {TEAM_BLUE_HEX}; }}
@@ -144,10 +144,11 @@ with col1:
 with col2:
     st.title("CNC CAM File Translator")
 
-st.markdown("*Convert PenguinCAM .nc to ShopBot .sbp | Origin Home Redirect Enabled*")
+st.markdown("*Utility to convert PenguinCAM .nc files to ShopBot .sbp file*")
+st.markdown("*See app code at [github.com/ETechChargers5298/CNC-File-Translator](https://github.com/ETechChargers5298/CNC-File-Translator)*")
 
 st.subheader("1. Upload NC File")
-uploaded_file = st.file_uploader("Select .nc file:", type=["nc", "txt"])
+uploaded_file = st.file_uploader("Select .nc file from PenguinCAM:", type=["nc", "txt"])
 
 if uploaded_file:
     raw_content = uploaded_file.getvalue().decode("utf-8")
@@ -175,4 +176,5 @@ if uploaded_file:
     )
 
     st.subheader("4. Run SBP File from Shopbot Software")
-    st.write("Send the file to the computer directly connected to the ShopBot machine (Slack, Google Drive, etc.)")
+    st.markdown("Send the file to the computer directly connected to the ShopBot machine (Slack, Google Drive, etc.)")
+
