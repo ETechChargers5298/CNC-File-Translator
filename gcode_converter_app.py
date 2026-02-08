@@ -1,16 +1,21 @@
 import streamlit as st
 import re
 import io
+import matplotlib.pyplot as plt
 
-# Define team colors (based on typical ETech Chargers colors)
+# Define team colors
 TEAM_BLUE_HEX = "#002060"
 TEAM_GREEN_HEX = "#74B44C"
-BACKGROUND_COLOR = "#FFFFFF"
+SHOPBOT_X_RED = "#FF0000"   # Red for X
+SHOPBOT_Y_GREEN = "#00AA00" # Green for Y (Standard ShopBot color)
+START_COLOR = "#0000FF"     # Blue for Start
+END_COLOR = "#FFD700"       # Yellow (Gold) for End
 
 def process_gcode(input_content):
     """
     Processes the input G-code content to comment out offending lines
-    for 3-axis ShopBot compatibility.
+    and specifically intercepts PenguinCAM's default park (X0.5 Y24.0)
+    to redirect to (0,0).
     """
     output_lines = []
     lines = input_content.strip().splitlines()
@@ -20,6 +25,12 @@ def process_gcode(input_content):
         upper = trimmed.upper()
         parts = trimmed.split(',')
         
+        # 1. Intercept PenguinCAM Park Position (X0.5 Y24.0)
+        if "Y24.0" in upper or "Y 24.0" in upper:
+            output_lines.append(f"' Redirected PenguinCAM Park ({line}) to Home:")
+            output_lines.append("J2, 0, 0")
+            continue
+
         isOffending = False
 
         if (any(x in upper for x in ['A', 'B']) or
@@ -37,68 +48,124 @@ def process_gcode(input_content):
             
     return "\n".join(output_lines)
 
-# --- Configuration for Logo and Colors ---
+def generate_preview(content):
+    """
+    State-tracking parser with ShopBot-themed axis arrows (X=Red, Y=Green)
+    and Start/End markers (Start=Blue, End=Yellow).
+    """
+    x_coords = []
+    y_coords = []
+    cur_x, cur_y = 0.0, 0.0
 
+    for line in content.splitlines():
+        clean_line = re.sub(r'\(.*?\)', '', line).strip().upper()
+        if not clean_line or clean_line.startswith("'"):
+            continue
+
+        updated = False
+        x_match = re.search(r'X\s*([-+]?\d*\.\d+|[-+]?\d+)', clean_line)
+        y_match = re.search(r'Y\s*([-+]?\d*\.\d+|[-+]?\d+)', clean_line)
+        
+        if x_match or y_match:
+            if x_match: cur_x = float(x_match.group(1))
+            if y_match: cur_y = float(y_match.group(1))
+            updated = True
+        else:
+            parts = clean_line.split(',')
+            if len(parts) >= 3:
+                try:
+                    cur_x = float(parts[1])
+                    cur_y = float(parts[2])
+                    updated = True
+                except ValueError:
+                    pass
+
+        if updated:
+            x_coords.append(cur_x)
+            y_coords.append(cur_y)
+
+    if not x_coords:
+        return None
+
+    # Create the Plot
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.plot(x_coords, y_coords, color=TEAM_BLUE_HEX, linewidth=1.2, label="Tool Path", zorder=3)
+    
+    # ADD SHOPBOT AXIS ARROWS at Origin
+    x_range = max(x_coords) - min(x_coords) if x_coords else 1
+    arrow_len = max(x_range * 0.1, 0.5) 
+    
+    # X-Axis Arrow (Red)
+    ax.annotate('', xy=(arrow_len, 0), xytext=(0, 0),
+                arrowprops=dict(edgecolor=SHOPBOT_X_RED, facecolor=SHOPBOT_X_RED, width=2, headwidth=8))
+    ax.text(arrow_len, -arrow_len*0.1, 'X', color=SHOPBOT_X_RED, fontweight='bold', ha='center')
+
+    # Y-Axis Arrow (Green)
+    ax.annotate('', xy=(0, arrow_len), xytext=(0, 0),
+                arrowprops=dict(edgecolor=SHOPBOT_Y_GREEN, facecolor=SHOPBOT_Y_GREEN, width=2, headwidth=8))
+    ax.text(-arrow_len*0.1, arrow_len, 'Y', color=SHOPBOT_Y_GREEN, fontweight='bold', va='center')
+
+    # --- MODIFIED: Mark Start (Blue) and End (Yellow) ---
+    ax.scatter(x_coords[0], y_coords[0], color=START_COLOR, s=60, label="Start Point", zorder=5, edgecolors='black')
+    ax.scatter(x_coords[-1], y_coords[-1], color=END_COLOR, s=60, label="End Point (Home)", zorder=6, edgecolors='black')
+    
+    # Axis Labels and Formatting
+    ax.set_xlabel("X axis (inches)", color=SHOPBOT_X_RED, fontweight='bold')
+    ax.set_ylabel("Y axis (inches)", color=SHOPBOT_Y_GREEN, fontweight='bold')
+    ax.set_aspect('equal', adjustable='datalim')
+    ax.set_title("ShopBot Preview", color=TEAM_BLUE_HEX, fontweight='bold')
+    ax.grid(True, linestyle=':', alpha=0.5)
+    ax.legend(loc='upper right', framealpha=0.9)
+    
+    return fig
+
+# --- App Interface ---
 st.markdown(f"""
 <style>
-    .css-2trqyj {{
-        color: {TEAM_BLUE_HEX};
-        display: inline-block;
-        margin-left: 10px;
-        vertical-align: middle;
-    }}
+    .st-emotion-cache-2trqyj {{ color: {TEAM_BLUE_HEX}; }}
     .stButton>button {{
         background-color: {TEAM_GREEN_HEX} !important;
         border-color: {TEAM_GREEN_HEX} !important;
         color: white !important;
     }}
-    .stSuccess {{
-        background-color: #E8F5E9;
-        color: {TEAM_GREEN_HEX};
-    }}
+    .stSuccess {{ background-color: #E8F5E9; color: {TEAM_GREEN_HEX}; }}
 </style>
 """, unsafe_allow_html=True)
 
-
-# --- Interface Headings ---
-
 col1, col2 = st.columns((1, 4))
-
 with col1:
     try:
-        # FIXED: Changed use_column_width to 'width'
-        st.image("sparky_logo.png", width=100, output_format='PNG')
-    except FileNotFoundError:
-        st.warning("Logo file 'sparky_logo.png' not found.")
+        st.image("sparky_logo.png", width=100)
+    except:
+        pass
 
 with col2:
     st.title("CNC CAM File Translator")
 
-st.markdown("Utility used to convert .nc files from PenguinCAM to .sbp files to use for ShopBot MAX CNC")
-st.markdown("*See app code at: [github.com/ETechChargers5298/CNC-File-Translator](https://github.com/ETechChargers5298/CNC-File-Translator)*")
-# --- End of Updated Headings ---
+st.markdown("*Convert PenguinCAM .nc to ShopBot .sbp | Origin Home Redirect Enabled*")
 
-uploaded_file = st.file_uploader("Upload .nc file", type=["nc", "txt"])
+st.subheader("1. Upload NC File")
+uploaded_file = st.file_uploader("Select .nc file:", type=["nc", "txt"])
 
 if uploaded_file:
-    content = uploaded_file.getvalue().decode("utf-8")
-    processed_content = process_gcode(content)
-    
-    original_name = uploaded_file.name
-    if "." in original_name:
-        name_parts = original_name.rsplit('.', 1)[0] # Get name without extension
-        output_name = name_parts + ".SBP"
-    else:
-        output_name = original_name + ".SBP"
+    raw_content = uploaded_file.getvalue().decode("utf-8")
+    processed_content = process_gcode(raw_content)
+    output_name = uploaded_file.name.rsplit('.', 1)[0] + ".SBP"
 
-    st.success("File processed successfully!")
+    st.success("File processed")
     
+    st.subheader("2. CNC Toolpath Cut Preview")
+    fig = generate_preview(processed_content)
+    
+    if fig:
+        st.pyplot(fig)
+    else:
+        st.warning("No coordinate data found.")
+
+    st.subheader("3. Download SBP File")
     st.download_button(
-        label="Download Cleaned .SBP File",
+        label="Click to Download .sbp File",
         data=processed_content,
         file_name=output_name,
         mime="text/plain"
     )
-
-
-
