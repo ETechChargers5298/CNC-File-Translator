@@ -1,4 +1,6 @@
+# CNC File Translator
 _Utility used to convert .nc files from PenguinCAM to .sbp files to use for ShopBot MAX CNC_
+
 
 **1. GET SKETCH INTO PENGUINCAM**
   * Create CAD file in [OnShape](https://cad.onshape.com/)
@@ -9,12 +11,12 @@ _Utility used to convert .nc files from PenguinCAM to .sbp files to use for Shop
     
 **2. GET .NC FILE FROM PENGUINCAM**
   * Choose desired settings for cutting out part
-  * Generate GCode file (.nc)
+  * Generate GCode file as ```.nc```
     
 **3. CONVERT TO .SBP FILE**
   * Go to online [GCode Translator app](https://etech-shopbot.streamlit.app/)
-  * Upload .nc file
-  * Download .sbp file
+  * Upload ```.nc``` file
+  * Download ```.sbp``` file
     
 **4. RUN .SBP FILE ON SHOPBOT**
   * Open [Shopbot SB3 Control Software](https://shopbottools.com/support-resources/control-software/) on Windows computer
