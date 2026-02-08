@@ -89,10 +89,12 @@ def generate_preview(content):
     x_range = max(x_coords) - min(x_coords) if x_coords else 1
     arrow_len = max(x_range * 0.1, 0.5) 
     
+    # X-Axis Arrow (Red)
     ax.annotate('', xy=(arrow_len, 0), xytext=(0, 0),
                 arrowprops=dict(edgecolor=SHOPBOT_X_RED, facecolor=SHOPBOT_X_RED, width=2, headwidth=8))
     ax.text(arrow_len, -arrow_len*0.1, 'X', color=SHOPBOT_X_RED, fontweight='bold', ha='center')
 
+    # Y-Axis Arrow (Green)
     ax.annotate('', xy=(0, arrow_len), xytext=(0, 0),
                 arrowprops=dict(edgecolor=SHOPBOT_Y_GREEN, facecolor=SHOPBOT_Y_GREEN, width=2, headwidth=8))
     ax.text(-arrow_len*0.1, arrow_len, 'Y', color=SHOPBOT_Y_GREEN, fontweight='bold', va='center')
@@ -134,6 +136,7 @@ st.markdown(f"""
 col1, col2 = st.columns((1, 4))
 with col1:
     try:
+        # Explicit width syntax for future compatibility
         st.image("sparky_logo.png", width=100)
     except:
         pass
@@ -151,13 +154,15 @@ if uploaded_file:
     processed_content = process_gcode(raw_content)
     output_name = uploaded_file.name.rsplit('.', 1)[0] + ".SBP"
 
-    st.success("File processed")
+    # Moved success message between 1 and 2
+    st.success("File processed successfully!")
     
     st.subheader("2. CNC Toolpath Cut Preview")
     fig = generate_preview(processed_content)
     
     if fig:
-        st.pyplot(fig)
+        # Modern width parameter to clear console warnings
+        st.pyplot(fig, width='stretch')
     else:
         st.warning("No coordinate data found.")
 
